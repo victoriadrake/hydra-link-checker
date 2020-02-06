@@ -26,6 +26,12 @@ The report will be [YAML](https://yaml.org/) formatted. To save the output to a 
 python hydra.py [URL] > [PATH/TO/FILE.yaml]
 ```
 
+You can add the current date to the filename using a command substitution, such as:
+
+```sh
+python hydra.py [URL] > /path/to/$(date '+%Y_%m_%d')_report.yaml
+```
+
 To see how long Hydra takes to check your site, add `time`:
 
 ```sh
