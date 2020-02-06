@@ -1,6 +1,8 @@
 from concurrent import futures
 from html.parser import HTMLParser
+from http.client import InvalidURL
 from queue import Queue, Empty
+from socket import timeout as TimeoutError
 from urllib import error, parse, request
 import gzip
 import sys
@@ -49,6 +51,17 @@ class Checker:
         domain = parse.urlsplit(l).netloc
         return domain
 
+    def add_entry(self, code, reason, page):
+        code = code
+        reason = reason
+        entry = {
+            "code": code,
+            "link": page["url"],
+            "parent": page["parent"],
+            "err": reason,
+        }
+        self.broken.append(entry)
+
     # Try to retreive contents of a page and record result
     def load_url(self, page, timeout):
         # Store the link to be checked and its parent in the result
@@ -56,7 +69,7 @@ class Checker:
             "url": page["url"],
             "parent": page["parent"],
             "data": "",
-            "content_type": "",
+            "valid_content_type": False,
         }
 
         # Use GET as HEAD is frequently not allowed
@@ -69,8 +82,8 @@ class Checker:
 
         try:
             http_response = request.urlopen(r, timeout=self.TIMEOUT)
+
             encoding = http_response.headers.get("Content-Encoding")
-            content_type = http_response.headers.get("Content-Type")
             if encoding and "gzip" in encoding:
                 data = gzip.decompress(http_response.read()).decode(
                     encoding="utf-8", errors="ignore"
@@ -80,36 +93,39 @@ class Checker:
             else:
                 # Support for other less common directives not handled
                 raise NotImplementedError
-
             result["data"] = data
-            result["content_type"] = content_type
+
+            content_type = http_response.headers.get("Content-Type")
+            if (
+                content_type
+                and "text/html" in content_type
+                or "text/plain" in content_type
+            ):
+                valid_content_type = True
+            else:
+                valid_content_type = False
+            result["valid_content_type"] = valid_content_type
 
         except error.HTTPError as e:
             code = e.getcode()
             reason = e.reason
-            entry = {
-                "code": code,
-                "link": page["url"],
-                "parent": page["parent"],
-                "err": reason,
-            }
-            self.broken.append(entry)
+            self.add_entry(code, reason, page)
         except (
             error.URLError,
+            ConnectionRefusedError,
+            ConnectionResetError,
+            InvalidURL,
             UnicodeEncodeError,
             UnicodeDecodeError,
             NotImplementedError,
         ) as e:
             code = 0
             reason = e
-
-            entry = {
-                "code": code,
-                "link": page["url"],
-                "parent": page["parent"],
-                "err": reason,
-            }
-            self.broken.append(entry)
+            self.add_entry(code, reason, page)
+        except TimeoutError as e:
+            code = 408
+            reason = e
+            self.add_entry(code, reason, page)
 
         return result
 
@@ -122,8 +138,7 @@ class Checker:
     def parse_page(self, page):
         if (
             self.domain == self.extract_domain(page["url"])
-            and "text/html" in page["content_type"]
-            or "text/plain" in page["content_type"]
+            and page["valid_content_type"]
         ):
             parent = page["url"]
             parser = Parser()
@@ -141,7 +156,7 @@ class Checker:
         self.report += "\nchecked: " + str(len(self.visited))
         self.report += "\nbroken: " + str(len(self.broken))
         self.report += "\n---\n"
-        sorted_list = sorted(self.broken, key=lambda k: k["code"])
+        sorted_list = sorted(self.broken, key=lambda k: k["code"], reverse=True)
         for link in sorted_list:
             self.report += f"\n- code:    {link['code']}\n  url:     {link['link']}\n  parent:  {link['parent']}\n  error:   {link['err']}\n"
         return self.report
@@ -159,7 +174,6 @@ class Checker:
                 return
             except Exception as e:
                 print(e)
-                continue
 
 
 if __name__ == "__main__":
