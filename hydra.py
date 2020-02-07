@@ -1,8 +1,8 @@
 from concurrent import futures
 from html.parser import HTMLParser
-from http.client import InvalidURL
+from http.client import IncompleteRead, InvalidURL
 from queue import Queue, Empty
-from socket import timeout as TimeoutError
+from socket import timeout as SocketTimeoutError
 from urllib import error, parse, request
 import gzip
 import sys
@@ -97,7 +97,7 @@ class Checker:
 
             content_type = http_response.headers.get("Content-Type")
             if (
-                content_type
+                content_type is not None
                 and "text/html" in content_type
                 or "text/plain" in content_type
             ):
@@ -114,10 +114,14 @@ class Checker:
             error.URLError,
             ConnectionRefusedError,
             ConnectionResetError,
+            IncompleteRead,
             InvalidURL,
+            NotImplementedError,
+            SocketTimeoutError,
+            TimeoutError,
+            TypeError,
             UnicodeEncodeError,
             UnicodeDecodeError,
-            NotImplementedError,
         ) as e:
             code = 0
             reason = e
