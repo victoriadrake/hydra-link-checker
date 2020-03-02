@@ -37,7 +37,7 @@ class Parser(HTMLParser):
 class Checker:
     TO_PROCESS = Queue()
     # Maximum workers to run
-    THREADS = 20
+    THREADS = 50
     # Maximum seconds to wait for HTTP response
     TIMEOUT = 60
 
@@ -110,6 +110,7 @@ class Checker:
             code = e.getcode()
             reason = e.reason
             self.add_entry(code, reason, page)
+            return
         except (
             error.URLError,
             ConnectionRefusedError,
@@ -126,10 +127,12 @@ class Checker:
             code = 0
             reason = e
             self.add_entry(code, reason, page)
+            return
         except TimeoutError as e:
             code = 408
             reason = e
             self.add_entry(code, reason, page)
+            return
 
         return result
 
@@ -169,7 +172,7 @@ class Checker:
     def run(self):
         while True:
             try:
-                target_url = self.TO_PROCESS.get(block=True, timeout=self.TIMEOUT + 5)
+                target_url = self.TO_PROCESS.get(block=True, timeout=4)
                 if target_url["url"] not in self.visited:
                     self.visited.add(target_url["url"])
                     job = self.pool.submit(self.load_url, target_url, self.TIMEOUT)
