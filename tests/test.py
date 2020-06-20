@@ -34,7 +34,7 @@ class TestCases(unittest.TestCase):
 
     # Checker uses correct domain for comparison
     def test_domain_extraction(self):
-        self.assertEqual(self.check.extract_domain(self.url), "example.com")
+        self.assertEqual(extract_domain(self.url), "example.com")
 
     # Checker doesn't add visited links to queue
     def test_process_queue_length(self):
