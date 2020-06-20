@@ -1,7 +1,7 @@
-from hydra import Parser, Checker
 import os
 import unittest
 
+from hydra import Parser, Checker, extract_domain
 
 HTMLDATA = os.path.join(os.path.dirname(__file__), "data/test-page.html")
 
@@ -41,7 +41,33 @@ class TestCases(unittest.TestCase):
         self.pagedata = {
             "url": "https://example.com/test-page.html",
             "parent": "https://example.com/test-page.html",
-            "data": '<!DOCTYPE html>\n<html>\n\n    <head>\n        <title>Test Data Page</title>\n\n        <meta charset="utf-8">\n        <meta http-equiv="Content-type" content="text/html; charset=UTF-8">\n        <meta name="viewport" content="width=device-width, initial-scale=1">\n        <link rel="stylesheet" href="style.css" type="text/css">\n        <script type="text/javascript" src="scripts.js"></script>\n    </head>\n\n    <body>\n        <div>\n            <h1>Test Data Page</h1>\n            <p>This page does not exist: <a href="/i-donut-exist">Whale</a></p>\n            <p>This is not a link: <a>No Spoon</a></p>\n            <img src="image.png" />\n            <p>This page does not exist: <a href="/multithreading-is-fun">Petunias</a></p>\n            <p>This page contains more links: <a href="/i-have-links">Crawl Me</a></p>\n            <p>This domain is for use in illustrative examples in documents. You may use this\n                domain in literature without prior coordination or asking for permission: <a\n                    href="https://example.com">Example</a></p>\n        </div>\n\n\n    </body>\n\n</html>',
+            "data": """
+                <!DOCTYPE html>\n
+                <html>\n\n    
+                <head>\n        
+                    <title>Test Data Page</title>\n\n       
+                    <meta charset="utf-8">\n        
+                    <meta http-equiv="Content-type" content="text/html; charset=UTF-8">\n        
+                    <meta name="viewport" content="width=device-width, initial-scale=1">\n        
+                    <link rel="stylesheet" href="style.css" type="text/css">\n       
+                    <script type="text/javascript" src="scripts.js"></script>\n    
+                </head>\n\n    
+                <body>\n        
+                    <div>\n            
+                        <h1>Test Data Page</h1>\n            
+                        <p>This page does not exist: <a href="/i-donut-exist">Whale</a></p>\n            
+                        <p>This is not a link: <a>No Spoon</a></p>\n            
+                        <img src="image.png" />\n            
+                        <p>This page does not exist: <a href="/multithreading-is-fun">Petunias</a></p>\n            
+                        <p>This page contains more links: <a href="/i-have-links">Crawl Me</a></p>\n            
+                        <p>This domain is for use in illustrative examples in documents. You may use this\n
+                            domain in literature without prior coordination or asking for permission: 
+                            <a href="https://example.com">Example</a>
+                        </p>\n
+                     </div>\n\n\n
+                </body>\n
+                </html>'
+            """,
             "valid_content_type": True,
         }
         # There are 7 links in pagedata["data"]
