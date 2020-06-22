@@ -1,11 +1,11 @@
+import gzip
+import sys
 from concurrent import futures
 from html.parser import HTMLParser
 from http.client import IncompleteRead, InvalidURL
 from queue import Queue, Empty
 from socket import timeout as SocketTimeoutError
 from urllib import error, parse, request
-import gzip
-import sys
 
 
 class Parser(HTMLParser):
@@ -34,6 +34,11 @@ class Parser(HTMLParser):
         return msg
 
 
+def extract_domain(link):
+    domain = parse.urlsplit(link).netloc
+    return domain
+
+
 class Checker:
     TO_PROCESS = Queue()
     # Maximum workers to run
@@ -43,13 +48,11 @@ class Checker:
 
     def __init__(self, url):
         self.broken = []
-        self.domain = self.extract_domain(url)
+        self.domain = extract_domain(url)
         self.visited = set()
+        self.mailto_links = list()
         self.pool = futures.ThreadPoolExecutor(max_workers=self.THREADS)
-
-    def extract_domain(self, l):
-        domain = parse.urlsplit(l).netloc
-        return domain
+        self.report = ''
 
     def add_entry(self, code, reason, page):
         code = code
@@ -62,7 +65,7 @@ class Checker:
         }
         self.broken.append(entry)
 
-    # Try to retreive contents of a page and record result
+    # Try to retrieve contents of a page and record result
     def load_url(self, page, timeout):
         # Store the link to be checked and its parent in the result
         result = {
@@ -77,7 +80,7 @@ class Checker:
             page["url"],
             headers={
                 "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0"
-            },
+            }
         )
 
         try:
@@ -97,9 +100,9 @@ class Checker:
 
             content_type = http_response.headers.get("Content-Type")
             if (
-                content_type is not None
-                and "text/html" in content_type
-                or "text/plain" in content_type
+                    content_type is not None
+                    and "text/html" in content_type
+                    or "text/plain" in content_type
             ):
                 valid_content_type = True
             else:
@@ -112,17 +115,17 @@ class Checker:
             self.add_entry(code, reason, page)
             return
         except (
-            error.URLError,
-            ConnectionRefusedError,
-            ConnectionResetError,
-            IncompleteRead,
-            InvalidURL,
-            NotImplementedError,
-            SocketTimeoutError,
-            TimeoutError,
-            TypeError,
-            UnicodeEncodeError,
-            UnicodeDecodeError,
+                error.URLError,
+                ConnectionRefusedError,
+                ConnectionResetError,
+                IncompleteRead,
+                InvalidURL,
+                NotImplementedError,
+                SocketTimeoutError,
+                TimeoutError,
+                TypeError,
+                UnicodeEncodeError,
+                UnicodeDecodeError,
         ) as e:
             code = 0
             reason = e
@@ -144,8 +147,8 @@ class Checker:
     # Get more links from successfully retrieved pages in the same domain
     def parse_page(self, page):
         if (
-            self.domain == self.extract_domain(page["url"])
-            and page["valid_content_type"]
+                self.domain == extract_domain(page["url"])
+                and page["valid_content_type"]
         ):
             parent = page["url"]
             parser = Parser()
@@ -158,9 +161,11 @@ class Checker:
                     self.TO_PROCESS.put(li)
 
     # Parse broken links list into YAML report
-    def report(self):
+    def make_report(self):
         self.report = "---\ntitle: Broken Link Report"
         self.report += "\nchecked: " + str(len(self.visited))
+        self.report += "\nnumber of email links: " + str(len(self.mailto_links))
+        self.report += "\nemails: " + ", ".join([str(m) for m in set(self.mailto_links)])
         self.report += "\nbroken: " + str(len(self.broken))
         self.report += "\n---\n"
         sorted_list = sorted(self.broken, key=lambda k: k["code"], reverse=True)
@@ -173,7 +178,11 @@ class Checker:
         while True:
             try:
                 target_url = self.TO_PROCESS.get(block=True, timeout=4)
-                if target_url["url"] not in self.visited:
+                if target_url["url"].startswith("mailto:"):
+                    email = target_url["url"][len("mailto:"):]
+                    self.mailto_links.append(email)
+
+                elif target_url["url"] not in self.visited:
                     self.visited.add(target_url["url"])
                     job = self.pool.submit(self.load_url, target_url, self.TIMEOUT)
                     job.add_done_callback(self.handle_future)
@@ -183,11 +192,19 @@ class Checker:
                 print(e)
 
 
-if __name__ == "__main__":
+def main():
+    if len(sys.argv) == 1:
+        print("url missing as a sh parameter")
+        sys.exit(1)
+
     url = sys.argv[1]
     first_url = {"parent": url, "url": url}
 
     check = Checker(url)
     check.TO_PROCESS.put(first_url)
     check.run()
-    print(check.report())
+    print(check.make_report())
+
+
+if __name__ == "__main__":
+    main()
