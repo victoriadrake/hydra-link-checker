@@ -204,6 +204,9 @@ def main():
     check.TO_PROCESS.put(first_url)
     check.run()
     print(check.make_report())
+    
+    if check.broken:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
