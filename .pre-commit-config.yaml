@@ -1,0 +1,26 @@
+fail_fast: true
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.1.0 # Use the ref you want to point at
+    hooks:
+      - id: detect-aws-credentials
+      - id: end-of-file-fixer
+        types: [markdown]
+      - id: trailing-whitespace
+  - repo: https://github.com/psf/black
+    rev: 19.3b0
+    hooks:
+      - id: black
+  - repo: https://github.com/asottile/blacken-docs
+    rev: v1.7.0
+    hooks:
+      - id: blacken-docs
+        additional_dependencies: [black==19.3b0]
+  - repo: local
+    hooks:
+      - id: markdownlint
+        name: markdownlint
+        description: "Lint Markdown files"
+        entry: markdownlint '**/*.md' --fix --ignore node_modules --config "./.markdownlint.json"
+        language: node
+        types: [markdown]

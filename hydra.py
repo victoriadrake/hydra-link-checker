@@ -52,7 +52,7 @@ class Checker:
         self.visited = set()
         self.mailto_links = list()
         self.pool = futures.ThreadPoolExecutor(max_workers=self.THREADS)
-        self.report = ''
+        self.report = ""
 
     def add_entry(self, code, reason, page):
         code = code
@@ -80,7 +80,7 @@ class Checker:
             page["url"],
             headers={
                 "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0"
-            }
+            },
         )
 
         try:
@@ -100,9 +100,9 @@ class Checker:
 
             content_type = http_response.headers.get("Content-Type")
             if (
-                    content_type is not None
-                    and "text/html" in content_type
-                    or "text/plain" in content_type
+                content_type is not None
+                and "text/html" in content_type
+                or "text/plain" in content_type
             ):
                 valid_content_type = True
             else:
@@ -115,17 +115,17 @@ class Checker:
             self.add_entry(code, reason, page)
             return
         except (
-                error.URLError,
-                ConnectionRefusedError,
-                ConnectionResetError,
-                IncompleteRead,
-                InvalidURL,
-                NotImplementedError,
-                SocketTimeoutError,
-                TimeoutError,
-                TypeError,
-                UnicodeEncodeError,
-                UnicodeDecodeError,
+            error.URLError,
+            ConnectionRefusedError,
+            ConnectionResetError,
+            IncompleteRead,
+            InvalidURL,
+            NotImplementedError,
+            SocketTimeoutError,
+            TimeoutError,
+            TypeError,
+            UnicodeEncodeError,
+            UnicodeDecodeError,
         ) as e:
             code = 0
             reason = e
@@ -146,10 +146,7 @@ class Checker:
 
     # Get more links from successfully retrieved pages in the same domain
     def parse_page(self, page):
-        if (
-                self.domain == extract_domain(page["url"])
-                and page["valid_content_type"]
-        ):
+        if self.domain == extract_domain(page["url"]) and page["valid_content_type"]:
             parent = page["url"]
             parser = Parser()
             links = parser.feed_me(page["data"])
@@ -165,7 +162,9 @@ class Checker:
         self.report = "---\ntitle: Broken Link Report"
         self.report += "\nchecked: " + str(len(self.visited))
         self.report += "\nnumber of email links: " + str(len(self.mailto_links))
-        self.report += "\nemails: " + ", ".join([str(m) for m in set(self.mailto_links)])
+        self.report += "\nemails: " + ", ".join(
+            [str(m) for m in set(self.mailto_links)]
+        )
         self.report += "\nbroken: " + str(len(self.broken))
         self.report += "\n---\n"
         sorted_list = sorted(self.broken, key=lambda k: k["code"], reverse=True)
@@ -179,7 +178,7 @@ class Checker:
             try:
                 target_url = self.TO_PROCESS.get(block=True, timeout=4)
                 if target_url["url"].startswith("mailto:"):
-                    email = target_url["url"][len("mailto:"):]
+                    email = target_url["url"][len("mailto:") :]
                     self.mailto_links.append(email)
 
                 elif target_url["url"] not in self.visited:
@@ -204,7 +203,7 @@ def main():
     check.TO_PROCESS.put(first_url)
     check.run()
     print(check.make_report())
-    
+
     if check.broken:
         sys.exit(1)
 
