@@ -28,6 +28,8 @@ class Parser(HTMLParser):
     def feed_me(self, data):
         self.links = []
         self.feed(data)
+        exclude_tel_links = [l for l in self.links if "tel:" not in l]
+        self.links = exclude_tel_links
         return self.links
 
     def error(self, msg):
