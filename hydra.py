@@ -13,6 +13,8 @@ class Parser(HTMLParser):
     TAGS = ["a", "link", "img", "script"]
     # Valid attributes to check
     ATTRS = ["href", "src"]
+    # Protocols to exclude
+    EXCLUDE_SCHEME_PREFIXES = ["tel:"]
 
     def __init__(self):
         super(Parser, self).__init__()
@@ -23,13 +25,16 @@ class Parser(HTMLParser):
             return
         for a in attrs:
             if a[0] in self.ATTRS:
+                exclude_list = [
+                    e for e in self.EXCLUDE_SCHEME_PREFIXES if a[1].startswith(e)
+                ]
+                if len(exclude_list) > 0:
+                    return
                 self.links.append(a[1])
 
     def feed_me(self, data):
         self.links = []
         self.feed(data)
-        exclude_tel_links = [l for l in self.links if "tel:" not in l]
-        self.links = exclude_tel_links
         return self.links
 
     def error(self, msg):
