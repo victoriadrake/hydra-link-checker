@@ -52,6 +52,8 @@ class Checker:
     THREADS = 50
     # Maximum seconds to wait for HTTP response
     TIMEOUT = 60
+    # Response codes that are OK with you
+    OK = [200]
 
     def __init__(self, url):
         self.broken = []
@@ -62,6 +64,8 @@ class Checker:
         self.report = ""
 
     def add_entry(self, code, reason, page):
+        if code in self.OK:
+            return
         code = code
         reason = reason
         entry = {

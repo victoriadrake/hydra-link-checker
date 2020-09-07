@@ -24,3 +24,9 @@ repos:
         entry: markdownlint '**/*.md' --fix --ignore node_modules --config "./.markdownlint.json"
         language: node
         types: [markdown]
+      - id: unittest
+        name: unittest
+        description: "Run the tests"
+        entry: python -m unittest tests/test.py
+        language: python
+        types: [python]
