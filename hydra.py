@@ -1,11 +1,44 @@
 import gzip
 import sys
+import json
 from concurrent import futures
 from html.parser import HTMLParser
 from http.client import IncompleteRead, InvalidURL
 from queue import Queue, Empty
 from socket import timeout as SocketTimeoutError
 from urllib import error, parse, request
+
+
+class Config:
+    def __init__(self, config_filename=""):
+        self.tags = ["a", "link", "img", "script"]
+        self.attrs = ["href", "src"]
+        self.exclude_scheme_prefixes = ["tel:"]
+        self.threads = 50
+        self.timeout = 60
+        self.OK = [200]
+
+        if config_filename != "":
+            with open(config_filename, "r") as file:
+                file_text = file.read()
+                config_json = json.loads(file_text)
+                self.tags = config_json.get("tags", self.tags)
+                self.attrs = config_json.get("attrs", self.attrs)
+                self.exclude_scheme_prefixes = config_json.get(
+                    "exclude_scheme_prefixes", self.exclude_scheme_prefixes
+                )
+                self.threads = config_json.get("threads", self.threads)
+                self.timeout = config_json.get("timeout", self.timeout)
+                self.OK = config_json.get("OK", self.OK)
+
+    def __str__(self):
+        text = f"""tags: {self.tags}
+attrs: {self.attrs}
+exclude_scheme_prefixes = {self.exclude_scheme_prefixes}
+threads = {self.threads}
+timeout = {self.timeout}
+OK = {self.OK}"""
+        return text
 
 
 class Parser(HTMLParser):

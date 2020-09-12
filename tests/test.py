@@ -1,9 +1,10 @@
 import os
 import unittest
 
-from hydra import Parser, Checker, extract_domain
+from hydra import Parser, Checker, extract_domain, Config
 
 HTMLDATA = os.path.join(os.path.dirname(__file__), "data/test-page.html")
+CONFIGDATA = os.path.join(os.path.dirname(__file__), "data/basic_config.json")
 
 
 class TestCases(unittest.TestCase):
@@ -79,6 +80,37 @@ class TestCases(unittest.TestCase):
         second_parse = 13
         self.check.parse_page(self.pagedata)
         self.assertEqual(len(self.check.TO_PROCESS.queue), second_parse)
+
+    def test_read_config_without_file(self):
+        # Arrange
+
+        # Act
+        results = Config()
+
+        # Assert
+        expected = """tags: ['a', 'link', 'img', 'script']
+attrs: ['href', 'src']
+exclude_scheme_prefixes = ['tel:']
+threads = 50
+timeout = 60
+OK = [200]"""
+        self.assertEqual(str(results), expected)
+
+    def test_read_config_with_valid_config_file(self):
+        # Arrange
+
+        # Act
+        results = Config(CONFIGDATA)
+        print(results)
+
+        # Assert
+        expected = """tags: ['a']
+attrs: ['href']
+exclude_scheme_prefixes = []
+threads = 25
+timeout = 30
+OK = [200, 999]"""
+        self.assertEqual(str(results), expected)
 
 
 if __name__ == "__main__":
