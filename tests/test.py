@@ -14,7 +14,7 @@ class TestCases(unittest.TestCase):
         self.data = self.testfile.read()
         self.url = "https://example.com"
         self.check = Checker(self.url, Config())
-        self.parser = Parser()
+        self.parser = Parser(Config())
 
     def tearDown(self):
         self.testfile.close()
@@ -93,7 +93,7 @@ attrs: ['href', 'src']
 exclude_scheme_prefixes = ['tel:']
 threads = 50
 timeout = 60
-OK = [200]"""
+OK = [200, 999]"""
         self.assertEqual(str(results), expected)
 
     def test_read_config_with_valid_config_file(self):
