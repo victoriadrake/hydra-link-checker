@@ -13,7 +13,7 @@ class TestCases(unittest.TestCase):
         self.testfile = open(HTMLDATA)
         self.data = self.testfile.read()
         self.url = "https://example.com"
-        self.check = Checker(self.url)
+        self.check = Checker(self.url, Config())
         self.parser = Parser()
 
     def tearDown(self):
@@ -101,7 +101,6 @@ OK = [200]"""
 
         # Act
         results = Config(CONFIGDATA)
-        print(results)
 
         # Assert
         expected = """tags: ['a']
