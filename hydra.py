@@ -17,7 +17,7 @@ class Config:
         self.exclude_scheme_prefixes = ["tel:"]
         self.threads = 50
         self.timeout = 60
-        self.OK = [200]
+        self.OK = [200, 999]
 
         if config_filename != "":
             with open(config_filename, "r") as file:
@@ -49,9 +49,7 @@ class Parser(HTMLParser):
         self.config = config
 
     # Tags to check
-
     # Valid attributes to check
-
     # Protocols to exclude
 
     def handle_starttag(self, tag, attrs):
