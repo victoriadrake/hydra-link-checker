@@ -48,10 +48,6 @@ class Parser(HTMLParser):
         self.links = []
         self.config = config
 
-    # Tags to check
-    # Valid attributes to check
-    # Protocols to exclude
-
     def handle_starttag(self, tag, attrs):
         if tag not in self.config.tags:
             return
@@ -89,10 +85,6 @@ class Checker:
         self.mailto_links = list()
         self.pool = futures.ThreadPoolExecutor(max_workers=self.config.threads)
         self.report = ""
-
-        # Maximum workers to run
-        # Maximum seconds to wait for HTTP response
-        # Response codes that are OK with you
 
     def add_entry(self, code, reason, page):
         if code in self.config.OK:
