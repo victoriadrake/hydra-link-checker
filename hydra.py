@@ -1,5 +1,7 @@
 import gzip
 import sys
+import json
+from os import path
 from concurrent import futures
 from html.parser import HTMLParser
 from http.client import IncompleteRead, InvalidURL
@@ -8,25 +10,51 @@ from socket import timeout as SocketTimeoutError
 from urllib import error, parse, request
 
 
-class Parser(HTMLParser):
-    # Tags to check
-    TAGS = ["a", "link", "img", "script"]
-    # Valid attributes to check
-    ATTRS = ["href", "src"]
-    # Protocols to exclude
-    EXCLUDE_SCHEME_PREFIXES = ["tel:"]
+class Config:
+    def __init__(self, config_filename=""):
+        self.tags = ["a", "link", "img", "script"]
+        self.attrs = ["href", "src"]
+        self.exclude_scheme_prefixes = ["tel:"]
+        self.threads = 50
+        self.timeout = 60
+        self.OK = [200, 999]
 
-    def __init__(self):
+        if config_filename != "":
+            with open(config_filename, "r") as file:
+                file_text = file.read()
+                config_json = json.loads(file_text)
+                self.tags = config_json.get("tags", self.tags)
+                self.attrs = config_json.get("attrs", self.attrs)
+                self.exclude_scheme_prefixes = config_json.get(
+                    "exclude_scheme_prefixes", self.exclude_scheme_prefixes
+                )
+                self.threads = config_json.get("threads", self.threads)
+                self.timeout = config_json.get("timeout", self.timeout)
+                self.OK = config_json.get("OK", self.OK)
+
+    def __str__(self):
+        text = f"""tags: {self.tags}
+attrs: {self.attrs}
+exclude_scheme_prefixes = {self.exclude_scheme_prefixes}
+threads = {self.threads}
+timeout = {self.timeout}
+OK = {self.OK}"""
+        return text
+
+
+class Parser(HTMLParser):
+    def __init__(self, config):
         super(Parser, self).__init__()
         self.links = []
+        self.config = config
 
     def handle_starttag(self, tag, attrs):
-        if tag not in self.TAGS:
+        if tag not in self.config.tags:
             return
         for a in attrs:
-            if a[0] in self.ATTRS:
+            if a[0] in self.config.attrs:
                 exclude_list = [
-                    e for e in self.EXCLUDE_SCHEME_PREFIXES if a[1].startswith(e)
+                    e for e in self.config.exclude_scheme_prefixes if a[1].startswith(e)
                 ]
                 if len(exclude_list) > 0:
                     return
@@ -48,23 +76,18 @@ def extract_domain(link):
 
 class Checker:
     TO_PROCESS = Queue()
-    # Maximum workers to run
-    THREADS = 50
-    # Maximum seconds to wait for HTTP response
-    TIMEOUT = 60
-    # Response codes that are OK with you
-    OK = [200]
 
-    def __init__(self, url):
+    def __init__(self, url, config):
+        self.config = config
         self.broken = []
         self.domain = extract_domain(url)
         self.visited = set()
         self.mailto_links = list()
-        self.pool = futures.ThreadPoolExecutor(max_workers=self.THREADS)
+        self.pool = futures.ThreadPoolExecutor(max_workers=self.config.threads)
         self.report = ""
 
     def add_entry(self, code, reason, page):
-        if code in self.OK:
+        if code in self.config.OK:
             return
         code = code
         reason = reason
@@ -95,7 +118,7 @@ class Checker:
         )
 
         try:
-            http_response = request.urlopen(r, timeout=self.TIMEOUT)
+            http_response = request.urlopen(r, timeout=self.config.timeout)
 
             encoding = http_response.headers.get("Content-Encoding")
             if encoding and "gzip" in encoding:
@@ -159,7 +182,7 @@ class Checker:
     def parse_page(self, page):
         if self.domain == extract_domain(page["url"]) and page["valid_content_type"]:
             parent = page["url"]
-            parser = Parser()
+            parser = Parser(self.config)
             links = parser.feed_me(page["data"])
             new_links = [x for x in links if x not in self.visited]
             full_links = [parse.urljoin(parent, l) for l in new_links]
@@ -194,7 +217,9 @@ class Checker:
 
                 elif target_url["url"] not in self.visited:
                     self.visited.add(target_url["url"])
-                    job = self.pool.submit(self.load_url, target_url, self.TIMEOUT)
+                    job = self.pool.submit(
+                        self.load_url, target_url, self.config.timeout
+                    )
                     job.add_done_callback(self.handle_future)
             except Empty:
                 return
@@ -210,7 +235,15 @@ def main():
     url = sys.argv[1]
     first_url = {"parent": url, "url": url}
 
-    check = Checker(url)
+    config_file_name = ""
+    if len(sys.argv) == 3:
+        config_file_name = sys.argv[2]
+        if not path.exists(config_file_name):
+            print(f"can't find {config_file_name} as config file")
+            sys.exit(1)
+    config = Config(config_file_name)
+
+    check = Checker(url, config)
     check.TO_PROCESS.put(first_url)
     check.run()
     print(check.make_report())

@@ -1,0 +1,15 @@
+{
+    "timeout": 30,
+    "tags": [
+        "a"
+    ],
+    "attrs": [
+        "href"
+    ],
+    "exclude_scheme_prefixes": [],
+    "threads": 25,
+    "OK": [
+        200,
+        999
+    ]
+}
