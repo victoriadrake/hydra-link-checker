@@ -39,39 +39,45 @@ time python hydra.py [URL]
 ```
 
 ## Configuration
-Hydra can accept a JSON configuration file for specific parameters:
 
-```
+Hydra can accept an optional JSON configuration file for specific parameters, for example:
+
+```json
 {
-    "timeout": 30,
-    "tags": [
-        "a", "img"
+    "OK": [
+        200,
+        999,
+        403
     ],
     "attrs": [
         "href"
     ],
-    "exclude_scheme_prefixes": ["tel"],
+    "exclude_scheme_prefixes": [
+        "tel"
+    ],
+    "tags": [
+        "a",
+        "img"
+    ],
     "threads": 25,
-    "OK": [
-        200,
-        999
-    ]
+    "timeout": 30
 }
 ```
 
 To use a configuration file, supply the filename as the command line argument after the URL:
 
-```
+```sh
 python hydra.py https://example.com my_config.json
 ```
 
 Possible settings:
-* timeout - Maximum seconds to wait for HTTP response. Defaults to 60
-* tags - HTML tags to check for links. Defaults to ["a", "link", "img", "script"]
-* attr - Attributes of the HTML tags to check for links. Defaults to ["href", "src"]
-* exclude_scheme_prefixes - HTTP scheme prefixes to exclude from checking. Defaults to ["tel:"]
-* threads - Maximum workers to run. Defaults to 50.
-* OK - HTTP response codes to consider as a successful link check. Defaults to [200, 999]
+
+* `OK` - [HTTP response codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) to consider as a successful link check. Defaults to `[200, 999]`.
+* `attrs` - Attributes of the HTML tags to check for links. Defaults to `["href", "src"]`.
+* `exclude_scheme_prefixes` - HTTP scheme prefixes to exclude from checking. Defaults to `["tel:"]`.
+* `tags` - HTML tags to check for links. Defaults to `["a", "link", "img", "script"]`.
+* `threads` - Maximum workers to run. Defaults to `50`.
+* `timeout` - Maximum seconds to wait for HTTP response. Defaults to `60`.
 
 ## Test
 

@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from hydra import Parser, Checker, extract_domain, Config
+from hydra import Checker, Config, Parser, extract_domain
 
 HTMLDATA = os.path.join(os.path.dirname(__file__), "data/test-page.html")
 CONFIGDATA = os.path.join(os.path.dirname(__file__), "data/basic_config.json")

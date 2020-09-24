@@ -1,11 +1,11 @@
 import gzip
-import sys
 import json
-from os import path
+import sys
 from concurrent import futures
 from html.parser import HTMLParser
 from http.client import IncompleteRead, InvalidURL
-from queue import Queue, Empty
+from os import path
+from queue import Empty, Queue
 from socket import timeout as SocketTimeoutError
 from urllib import error, parse, request
 
