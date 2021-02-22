@@ -90,7 +90,7 @@ class TestCases(unittest.TestCase):
         # Assert
         expected = """tags: ['a', 'link', 'img', 'script']
 attrs: ['href', 'src']
-exclude_scheme_prefixes = ['tel:']
+exclude_scheme_prefixes = ['tel:', 'javascript:']
 threads = 50
 timeout = 60
 OK = [200, 999]"""

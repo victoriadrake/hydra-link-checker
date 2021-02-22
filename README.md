@@ -74,7 +74,7 @@ Possible settings:
 
 * `OK` - [HTTP response codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) to consider as a successful link check. Defaults to `[200, 999]`.
 * `attrs` - Attributes of the HTML tags to check for links. Defaults to `["href", "src"]`.
-* `exclude_scheme_prefixes` - HTTP scheme prefixes to exclude from checking. Defaults to `["tel:"]`.
+* `exclude_scheme_prefixes` - HTTP scheme prefixes to exclude from checking. Defaults to `["tel:", "javascript:"]`.
 * `tags` - HTML tags to check for links. Defaults to `["a", "link", "img", "script"]`.
 * `threads` - Maximum workers to run. Defaults to `50`.
 * `timeout` - Maximum seconds to wait for HTTP response. Defaults to `60`.

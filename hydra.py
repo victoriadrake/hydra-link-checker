@@ -14,7 +14,7 @@ class Config:
     def __init__(self, config_filename=""):
         self.tags = ["a", "link", "img", "script"]
         self.attrs = ["href", "src"]
-        self.exclude_scheme_prefixes = ["tel:"]
+        self.exclude_scheme_prefixes = ["tel:", "javascript:"]
         self.threads = 50
         self.timeout = 60
         self.OK = [200, 999]
