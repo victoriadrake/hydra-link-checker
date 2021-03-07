@@ -158,8 +158,7 @@ class Checker:
             SocketTimeoutError,
             TimeoutError,
             TypeError,
-            UnicodeEncodeError,
-            UnicodeDecodeError,
+            UnicodeError,
         ) as e:
             code = 0
             reason = e
