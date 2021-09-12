@@ -46,6 +46,10 @@ To see how long Hydra takes to check your site, add `time`:
 time python hydra.py [URL]
 ```
 
+### GitHub Action
+
+You can easily incorporate Hydra as part of an automated process using the [link-snitch](https://github.com/victoriadrake/link-snitch) action.
+
 ## Configuration
 
 Hydra can accept an optional JSON configuration file for specific parameters, for example:
