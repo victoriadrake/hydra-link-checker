@@ -12,13 +12,21 @@ There are no external dependencies, Neo.
 
 ## Usage
 
-Run in a terminal:
-
 ```sh
-python hydra.py [URL]
+$ python hydra.py -h
+usage: hydra.py [-h] [--config CONFIG] URL
 ```
 
-Ensure `URL` is an absolute url including schema, i.e. `https://example.com`.
+Positional arguments:
+
+- `URL`: The URL of the website to crawl. Ensure `URL` is absolute including schema, e.g. `https://example.com`.
+
+Optional arguments:
+
+- `-h`, `--help`: Show help message and exit
+- `--config CONFIG`, `-c CONFIG`: Path to a configuration file
+
+A broken links report will be output to stdout, so you may like to redirect this to a file.
 
 The report will be [YAML](https://yaml.org/) formatted. To save the output to a file, run:
 
@@ -64,20 +72,20 @@ Hydra can accept an optional JSON configuration file for specific parameters, fo
 }
 ```
 
-To use a configuration file, supply the filename as the command line argument after the URL:
+To use a configuration file, supply the filename:
 
 ```sh
-python hydra.py https://example.com my_config.json
+python hydra.py https://example.com --config ./hydra-config.json
 ```
 
 Possible settings:
 
-* `OK` - [HTTP response codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) to consider as a successful link check. Defaults to `[200, 999]`.
-* `attrs` - Attributes of the HTML tags to check for links. Defaults to `["href", "src"]`.
-* `exclude_scheme_prefixes` - HTTP scheme prefixes to exclude from checking. Defaults to `["tel:", "javascript:"]`.
-* `tags` - HTML tags to check for links. Defaults to `["a", "link", "img", "script"]`.
-* `threads` - Maximum workers to run. Defaults to `50`.
-* `timeout` - Maximum seconds to wait for HTTP response. Defaults to `60`.
+- `OK` - [HTTP response codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) to consider as a successful link check. Defaults to `[200, 999]`.
+- `attrs` - Attributes of the HTML tags to check for links. Defaults to `["href", "src"]`.
+- `exclude_scheme_prefixes` - HTTP scheme prefixes to exclude from checking. Defaults to `["tel:", "javascript:"]`.
+- `tags` - HTML tags to check for links. Defaults to `["a", "link", "img", "script"]`.
+- `threads` - Maximum workers to run. Defaults to `50`.
+- `timeout` - Maximum seconds to wait for HTTP response. Defaults to `60`.
 
 ## Test
 

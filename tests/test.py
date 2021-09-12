@@ -8,7 +8,8 @@ CONFIGDATA = os.path.join(os.path.dirname(__file__), "data/basic_config.json")
 
 
 class TestCases(unittest.TestCase):
-    # Open and close file from data/
+    """Open and close file from data/"""
+
     def setUp(self):
         self.testfile = open(HTMLDATA)
         self.data = self.testfile.read()
@@ -19,8 +20,8 @@ class TestCases(unittest.TestCase):
     def tearDown(self):
         self.testfile.close()
 
-    # Parser gives expected values
     def test_parser_expected_output(self):
+        """ Parser gives expected values"""
         links = self.parser.feed_me(self.data)
         expected_output = [
             "style.css",
@@ -33,12 +34,12 @@ class TestCases(unittest.TestCase):
         ]
         self.assertEqual(links, expected_output)
 
-    # Checker uses correct domain for comparison
     def test_domain_extraction(self):
+        """Checker uses correct domain for comparison"""
         self.assertEqual(extract_domain(self.url), "example.com")
 
-    # Checker doesn't add visited links to queue
     def test_process_queue_length(self):
+        """Checker doesn't add visited links to queue"""
         self.pagedata = {
             "url": "https://example.com/test-page.html",
             "parent": "https://example.com/test-page.html",
@@ -88,12 +89,14 @@ class TestCases(unittest.TestCase):
         results = Config()
 
         # Assert
-        expected = """tags: ['a', 'link', 'img', 'script']
-attrs: ['href', 'src']
-exclude_scheme_prefixes = ['tel:', 'javascript:']
-threads = 50
-timeout = 60
-OK = [200, 999]"""
+        expected = (
+            f"tags: ['a', 'link', 'img', 'script']"
+            f"attrs: ['href', 'src']"
+            f"exclude_scheme_prefixes = ['tel:', 'javascript:']"
+            f"threads = 50"
+            f"timeout = 60"
+            f"OK = [200, 999]"
+        )
         self.assertEqual(str(results), expected)
 
     def test_read_config_with_valid_config_file(self):
@@ -103,12 +106,14 @@ OK = [200, 999]"""
         results = Config(CONFIGDATA)
 
         # Assert
-        expected = """tags: ['a']
-attrs: ['href']
-exclude_scheme_prefixes = []
-threads = 25
-timeout = 30
-OK = [200, 999]"""
+        expected = (
+            f"tags: ['a', 'img']"
+            f"attrs: ['href']"
+            f"exclude_scheme_prefixes = ['tel']"
+            f"threads = 25"
+            f"timeout = 30"
+            f"OK = [200, 999, 403]"
+        )
         self.assertEqual(str(results), expected)
 
 

@@ -1,3 +1,4 @@
+import argparse
 import gzip
 import json
 import sys
@@ -11,7 +12,10 @@ from urllib import error, parse, request
 
 
 class Config:
+    """Handle configuration"""
+
     def __init__(self, config_filename=""):
+        # Use these default settings if no configuration file is provided
         self.tags = ["a", "link", "img", "script"]
         self.attrs = ["href", "src"]
         self.exclude_scheme_prefixes = ["tel:", "javascript:"]
@@ -20,6 +24,7 @@ class Config:
         self.OK = [200, 999]
 
         if config_filename != "":
+            # Update settings if there is a config file
             with open(config_filename, "r") as file:
                 file_text = file.read()
                 config_json = json.loads(file_text)
@@ -33,26 +38,37 @@ class Config:
                 self.OK = config_json.get("OK", self.OK)
 
     def __str__(self):
-        text = f"""tags: {self.tags}
-attrs: {self.attrs}
-exclude_scheme_prefixes = {self.exclude_scheme_prefixes}
-threads = {self.threads}
-timeout = {self.timeout}
-OK = {self.OK}"""
+        text = (
+            f"tags: {self.tags}"
+            f"attrs: {self.attrs}"
+            f"exclude_scheme_prefixes = {self.exclude_scheme_prefixes}"
+            f"threads = {self.threads}"
+            f"timeout = {self.timeout}"
+            f"OK = {self.OK}"
+        )
         return text
 
 
 class Parser(HTMLParser):
+    """Parse tags found in webpages to get more links to check"""
+
     def __init__(self, config):
         super(Parser, self).__init__()
         self.links = []
         self.config = config
 
     def handle_starttag(self, tag, attrs):
+        """Method html.parser.HTMLParser.handle_starttag"""
+        # Ignore tags we aren't configured to check
         if tag not in self.config.tags:
             return
         for a in attrs:
-            if a[0] in self.config.attrs:
+            # Handle attributes we want to check while ignoring schemes we don't want to check
+            # e.g. a 'href' with scheme 'tel:555...'
+            # attrs is a list of (name, value) pairs
+            if a[0] in self.config.attrs and a[1]:
+                # TODO: handle an empty attribute value
+                # Ignore schemes we aren't configured to check
                 exclude_list = [
                     e for e in self.config.exclude_scheme_prefixes if a[1].startswith(e)
                 ]
@@ -70,6 +86,7 @@ class Parser(HTMLParser):
 
 
 def extract_domain(link):
+    """Extract domain of a link to help ensure we stay on the same website"""
     domain = parse.urlsplit(link).netloc
     return domain
 
@@ -87,6 +104,7 @@ class Checker:
         self.report = ""
 
     def add_entry(self, code, reason, page):
+        """Add a link to the report"""
         if code in self.config.OK:
             return
         code = code
@@ -99,9 +117,10 @@ class Checker:
         }
         self.broken.append(entry)
 
-    # Try to retrieve contents of a page and record result
     def load_url(self, page, timeout):
-        # Store the link to be checked and its parent in the result
+        """ Try to retrieve contents of a page and record result
+            Store the link to be checked and its parent in the result
+        """
         result = {
             "url": page["url"],
             "parent": page["parent"],
@@ -177,8 +196,8 @@ class Checker:
             page = result.result()
             self.parse_page(page)
 
-    # Get more links from successfully retrieved pages in the same domain
     def parse_page(self, page):
+        """Get more links from successfully retrieved pages in the same domain"""
         if self.domain == extract_domain(page["url"]) and page["valid_content_type"]:
             parent = page["url"]
             parser = Parser(self.config)
@@ -190,8 +209,8 @@ class Checker:
                     li = {"parent": parent, "url": l}
                     self.TO_PROCESS.put(li)
 
-    # Parse broken links list into YAML report
     def make_report(self):
+        """Parse broken links list into YAML report"""
         self.report = "---\ntitle: Broken Link Report"
         self.report += "\nchecked: " + str(len(self.visited))
         self.report += "\nnumber of email links: " + str(len(self.mailto_links))
@@ -205,8 +224,8 @@ class Checker:
             self.report += f"\n- code:    {link['code']}\n  url:     {link['link']}\n  parent:  {link['parent']}\n  error:   {link['err']}\n"
         return self.report
 
-    # Run crawler until TO_PROCESS queue is empty
     def run(self):
+        """Run crawler until TO_PROCESS queue is empty"""
         while True:
             try:
                 target_url = self.TO_PROCESS.get(block=True, timeout=4)
@@ -227,21 +246,35 @@ class Checker:
 
 
 def main():
-    if len(sys.argv) == 1:
-        print("url missing as a sh parameter")
+    """Validate arguments and run Hydra"""
+    parg = argparse.ArgumentParser(
+        description="Crawl a website and check for broken links.",
+        epilog="A broken links report will be output to stdout, so you may like to redirect this to a file.",
+    )
+    parg.add_argument(
+        "URL", help="The URL of the website to crawl, e.g. https://example.com"
+    )
+    parg.add_argument("--config", "-c", help="Path to a configuration file")
+    args = parg.parse_args()
+
+    # If a configuration file path was provided, ensure we can find it
+    if args.config and not path.exists(args.config):
+        print(f"Can't find {args.config} as config file.")
         sys.exit(1)
 
-    url = sys.argv[1]
+    # Ensure we have a valid URL to crawl
+    url = args.URL
+    check_url = parse.urlparse(url)
+    if check_url.scheme == "" or check_url.netloc == "":
+        print("Please provide a valid URL with scheme, e.g. https://example.com")
+        sys.exit(1)
+
+    # Configure and run Hydra
     first_url = {"parent": url, "url": url}
-
-    config_file_name = ""
-    if len(sys.argv) == 3:
-        config_file_name = sys.argv[2]
-        if not path.exists(config_file_name):
-            print(f"can't find {config_file_name} as config file")
-            sys.exit(1)
-    config = Config(config_file_name)
-
+    config_file = ""  # Uses default settings if no configuration file provided
+    if args.config:
+        config_file = args.config
+    config = Config(config_file)
     check = Checker(url, config)
     check.TO_PROCESS.put(first_url)
     check.run()

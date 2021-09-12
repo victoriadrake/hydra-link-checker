@@ -3,7 +3,6 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1 # Use the ref you want to point at
     hooks:
-      - id: detect-aws-credentials
       - id: end-of-file-fixer
         types: [markdown]
       - id: trailing-whitespace
@@ -16,14 +15,18 @@ repos:
     hooks:
       - id: blacken-docs
         additional_dependencies: [black==19.3b0]
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.1.3
+    hooks:
+    - id: markdownlint-cli2
+      name: markdownlint-cli2
+      description: "Checks the style of Markdown/CommonMark files."
+      entry: markdownlint-cli2
+      language: node
+      types: [markdown]
+      minimum_pre_commit_version: 0.15.0
   - repo: local
     hooks:
-      - id: markdownlint
-        name: markdownlint
-        description: "Lint Markdown files"
-        entry: markdownlint '**/*.md' --fix --ignore node_modules --config "./.markdownlint.json"
-        language: node
-        types: [markdown]
       - id: unittest
         name: unittest
         description: "Run the tests"

@@ -1,15 +1,19 @@
 {
-    "timeout": 30,
-    "tags": [
-        "a"
+    "OK": [
+        200,
+        999,
+        403
     ],
     "attrs": [
         "href"
     ],
-    "exclude_scheme_prefixes": [],
+    "exclude_scheme_prefixes": [
+        "tel"
+    ],
+    "tags": [
+        "a",
+        "img"
+    ],
     "threads": 25,
-    "OK": [
-        200,
-        999
-    ]
+    "timeout": 30
 }
