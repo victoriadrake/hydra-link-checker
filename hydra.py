@@ -22,6 +22,7 @@ class Config:
         self.threads = 50
         self.timeout = 60
         self.OK = [200, 999]
+        self.graceful_exit = False
 
         if config_filename != "":
             # Update settings if there is a config file
@@ -36,6 +37,7 @@ class Config:
                 self.threads = config_json.get("threads", self.threads)
                 self.timeout = config_json.get("timeout", self.timeout)
                 self.OK = config_json.get("OK", self.OK)
+                self.graceful_exit = config_json.get("graceful_exit", self.graceful_exit)
 
     def __str__(self):
         text = (
@@ -280,7 +282,7 @@ def main():
     check.run()
     print(check.make_report())
 
-    if check.broken:
+    if check.broken and not check.config.graceful_exit:
         sys.exit(1)
 
 

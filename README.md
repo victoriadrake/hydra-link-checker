@@ -72,7 +72,8 @@ Hydra can accept an optional JSON configuration file for specific parameters, fo
         "img"
     ],
     "threads": 25,
-    "timeout": 30
+    "timeout": 30,
+    "graceful_exit": "True"
 }
 ```
 
@@ -90,6 +91,7 @@ Possible settings:
 - `tags` - HTML tags to check for links. Defaults to `["a", "link", "img", "script"]`.
 - `threads` - Maximum workers to run. Defaults to `50`.
 - `timeout` - Maximum seconds to wait for HTTP response. Defaults to `60`.
+- `graceful_exit` - If set to `True`, and there are broken links present return `exit code 0` else return `exit code 1`.
 
 ## Test
 
