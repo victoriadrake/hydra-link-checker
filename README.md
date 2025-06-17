@@ -1,6 +1,8 @@
 # Hydra: multithreaded site-crawling link checker in Python
 
 ![Tests status badge](https://github.com/victoriadrake/hydra-link-checker/workflows/test/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)
 
 A Python program that ~~crawls~~ slithers 🐍 a website for links and prints a YAML report of broken links.
 
@@ -100,3 +102,17 @@ Run:
 ```sh
 python -m unittest tests/test.py
 ```
+
+## Screenshots
+
+### Passing Tests
+
+![Passing Tests](screenshots/test-pass.png)
+
+### Failing Tests
+
+![Failing Tests](screenshots/test-fail.png)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
