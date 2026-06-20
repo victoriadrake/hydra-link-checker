@@ -2,6 +2,7 @@ import argparse
 import gzip
 import json
 import sys
+import threading
 from concurrent import futures
 from html.parser import HTMLParser
 from http.client import IncompleteRead, InvalidURL
@@ -104,6 +105,11 @@ class Checker:
         self.mailto_links = list()
         self.pool = futures.ThreadPoolExecutor(max_workers=self.config.threads)
         self.report = ""
+        # Number of jobs submitted but not yet finished. The crawler must not
+        # stop while work is still in flight, since in-flight jobs discover and
+        # enqueue more links via their done callback.
+        self._lock = threading.Lock()
+        self._pending = 0
 
     def add_entry(self, code, reason, page):
         """Add a link to the report"""
@@ -198,6 +204,18 @@ class Checker:
             page = result.result()
             self.parse_page(page)
 
+    def _job_done(self, future):
+        """Done callback: process the result, then mark the job complete.
+
+        The decrement runs in a finally block so a job that raises still
+        releases its pending slot and can never wedge the crawler open.
+        """
+        try:
+            self.handle_future(future)
+        finally:
+            with self._lock:
+                self._pending -= 1
+
     def parse_page(self, page):
         """Get more links from successfully retrieved pages in the same domain"""
         if self.domain == extract_domain(page["url"]) and page["valid_content_type"]:
@@ -227,22 +245,35 @@ class Checker:
         return self.report
 
     def run(self):
-        """Run crawler until TO_PROCESS queue is empty"""
+        """Run crawler until the queue is drained and no jobs are in flight.
+
+        Stopping on an empty queue alone is a race: a worker may still be
+        fetching a page whose links have not been enqueued yet, which makes
+        the number of links checked vary between runs. Only stop once the
+        queue is empty *and* there is no pending work.
+        """
         while True:
             try:
-                target_url = self.TO_PROCESS.get(block=True, timeout=4)
+                target_url = self.TO_PROCESS.get(block=True, timeout=1)
+            except Empty:
+                with self._lock:
+                    if self._pending == 0:
+                        return
+                continue
+
+            try:
                 if target_url["url"].startswith("mailto:"):
                     email = target_url["url"][len("mailto:") :]
                     self.mailto_links.append(email)
 
                 elif target_url["url"] not in self.visited:
                     self.visited.add(target_url["url"])
+                    with self._lock:
+                        self._pending += 1
                     job = self.pool.submit(
                         self.load_url, target_url, self.config.timeout
                     )
-                    job.add_done_callback(self.handle_future)
-            except Empty:
-                return
+                    job.add_done_callback(self._job_done)
             except Exception as e:
                 print(e)
 

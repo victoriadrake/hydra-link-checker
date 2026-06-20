@@ -1,4 +1,5 @@
 import os
+import time
 import unittest
 
 from hydra import Checker, Config, Parser, extract_domain
@@ -81,6 +82,49 @@ class TestCases(unittest.TestCase):
         second_parse = 13
         self.check.parse_page(self.pagedata)
         self.assertEqual(len(self.check.TO_PROCESS.queue), second_parse)
+
+    def test_run_visits_all_links_despite_lulls(self):
+        """run() drains the whole site even when jobs finish slowly.
+
+        Regression test for inconsistent results: the crawler must not stop
+        while a worker is still in flight. Each fake fetch sleeps, so the
+        queue goes empty while a job is pending; only the pending-job guard
+        keeps the crawl going until every page is visited.
+        """
+        check = Checker("https://example.com", Config())
+        # The work queue is shared across Checker instances, so isolate it.
+        with check.TO_PROCESS.mutex:
+            check.TO_PROCESS.queue.clear()
+
+        pages = {
+            "https://example.com": '<a href="https://example.com/a">a</a>',
+            "https://example.com/a": '<a href="https://example.com/b">b</a>',
+            "https://example.com/b": "<p>no more links</p>",
+        }
+
+        def fake_load_url(page, timeout):
+            time.sleep(0.05)  # simulate latency so the queue empties mid-flight
+            return {
+                "url": page["url"],
+                "parent": page["parent"],
+                "data": pages.get(page["url"], ""),
+                "valid_content_type": True,
+            }
+
+        check.load_url = fake_load_url
+        check.TO_PROCESS.put(
+            {"parent": "https://example.com", "url": "https://example.com"}
+        )
+        check.run()
+
+        self.assertEqual(
+            check.visited,
+            {
+                "https://example.com",
+                "https://example.com/a",
+                "https://example.com/b",
+            },
+        )
 
     def test_read_config_without_file(self):
         # Arrange
