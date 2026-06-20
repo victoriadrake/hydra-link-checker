@@ -89,11 +89,29 @@ Possible settings:
 
 - `OK` - [HTTP response codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) to consider as a successful link check. Defaults to `[200, 999]`.
 - `attrs` - Attributes of the HTML tags to check for links. Defaults to `["href", "src"]`.
-- `exclude_scheme_prefixes` - HTTP scheme prefixes to exclude from checking. Defaults to `["tel:", "javascript:"]`.
+- `exclude_scheme_prefixes` - Link prefixes to exclude from checking. Any link that _starts with_ one of these strings is skipped, so this works for schemes (`"tel:"`, `"javascript:"`) as well as whole domains or path prefixes. Defaults to `["tel:", "javascript:"]`.
 - `tags` - HTML tags to check for links. Defaults to `["a", "link", "img", "script"]`.
 - `threads` - Maximum workers to run. Defaults to `50`.
 - `timeout` - Maximum seconds to wait for HTTP response. Defaults to `60`.
 - `graceful_exit` - If set to `True`, and there are broken links present return `exit code 0` else return `exit code 1`.
+
+### Excluding domains
+
+Some sites block crawlers or rate-limit them (HTTP 429), producing noise in your
+report. Because `exclude_scheme_prefixes` matches any leading substring, you can
+exclude whole domains or path prefixes by listing their URL prefixes:
+
+```json
+{
+    "exclude_scheme_prefixes": [
+        "tel:",
+        "javascript:",
+        "https://twitter.com/",
+        "https://www.npmjs.com/package/",
+        "https://github.com/owner/repo/issues/"
+    ]
+}
+```
 
 ## Test
 
