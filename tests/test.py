@@ -1,4 +1,9 @@
+import functools
+import http.server
 import os
+import socketserver
+import tempfile
+import threading
 import time
 import unittest
 
@@ -125,6 +130,51 @@ class TestCases(unittest.TestCase):
                 "https://example.com/b",
             },
         )
+
+    def test_end_to_end_crawl_over_http(self):
+        """Crawl a real site served on localhost, end to end.
+
+        The other tests call parse_page directly and never make a request, so
+        the urllib fetch, response handling, and the run() queue/thread loop go
+        unexercised. Serve a tiny fixture site and assert Hydra crawls the good
+        pages and reports exactly the one broken link. Self-contained: binds to
+        127.0.0.1 on an ephemeral port, so it needs no internet access.
+        """
+        tmpdir = tempfile.mkdtemp()
+        with open(os.path.join(tmpdir, "index.html"), "w") as f:
+            f.write('<a href="page2.html">ok</a><a href="missing.html">broken</a>')
+        with open(os.path.join(tmpdir, "page2.html"), "w") as f:
+            f.write('<a href="index.html">home</a>')
+
+        class QuietHandler(http.server.SimpleHTTPRequestHandler):
+            def log_message(self, *args):
+                pass  # keep test output clean
+
+        handler = functools.partial(QuietHandler, directory=tmpdir)
+        server = socketserver.ThreadingTCPServer(("127.0.0.1", 0), handler)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        try:
+            url = f"http://127.0.0.1:{port}/"
+            check = Checker(url, Config())
+            # TO_PROCESS is shared across Checker instances; start from empty.
+            with check.TO_PROCESS.mutex:
+                check.TO_PROCESS.queue.clear()
+            check.TO_PROCESS.put({"parent": url, "url": url})
+            check.run()
+        finally:
+            server.shutdown()
+            server.server_close()
+
+        self.assertEqual(
+            len(check.broken), 1, f"expected one broken link, got {check.broken}"
+        )
+        self.assertEqual(check.broken[0]["code"], 404)
+        self.assertTrue(check.broken[0]["link"].endswith("/missing.html"))
+        # The seed page and the good internal page were both crawled.
+        self.assertGreaterEqual(len(check.visited), 2)
 
     def test_read_config_without_file(self):
         # Arrange
