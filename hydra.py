@@ -140,7 +140,7 @@ class Checker:
         r = request.Request(
             page["url"],
             headers={
-                "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0"
+                "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:153.0) Gecko/20100101 Firefox/153.0 HydraCheckerBot (https://github.com/victoriadrake/hydra-link-checker/)"
             },
         )
 
