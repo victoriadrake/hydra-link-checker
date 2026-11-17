@@ -160,10 +160,8 @@ class Checker:
             result["data"] = data
 
             content_type = http_response.headers.get("Content-Type")
-            if (
-                content_type is not None
-                and "text/html" in content_type
-                or "text/plain" in content_type
+            if content_type is not None and (
+                "text/html" in content_type or "text/plain" in content_type
             ):
                 valid_content_type = True
             else:

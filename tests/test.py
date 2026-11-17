@@ -6,6 +6,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 
 from hydra import Checker, Config, Parser, extract_domain
 
@@ -175,6 +176,34 @@ class TestCases(unittest.TestCase):
         self.assertTrue(check.broken[0]["link"].endswith("/missing.html"))
         # The seed page and the good internal page were both crawled.
         self.assertGreaterEqual(len(check.visited), 2)
+
+    def test_page_without_content_type_is_not_broken(self):
+        """A page served without a Content-Type header is not misreported.
+
+        Regression test: the Content-Type check in load_url mixed `and`
+        and `or` without parentheses, so a missing header raised TypeError
+        inside `"text/plain" in content_type` and the page was wrongly
+        recorded as broken with code 0.
+        """
+
+        class HeaderlessResponse:
+            headers = {}
+
+            def read(self):
+                return b"<html><body>hi</body></html>"
+
+        page = {
+            "url": "https://example.com/no-content-type",
+            "parent": "https://example.com",
+        }
+        check = Checker("https://example.com", Config())
+        with mock.patch(
+            "urllib.request.urlopen", return_value=HeaderlessResponse()
+        ):
+            result = check.load_url(page, 60)
+        self.assertEqual(check.broken, [])
+        self.assertIsNotNone(result)
+        self.assertFalse(result["valid_content_type"])
 
     def test_read_config_without_file(self):
         # Arrange
